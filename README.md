@@ -1,5 +1,8 @@
 # Wrappers of bitpacking with extra pack formats
 
+[![Crates.io](https://img.shields.io/crates/v/rust-latex-doc-minimal-example?color=green&style=for-the-badge)](https://crates.io/crates/bitpacking-plus)
+[![docs.rs](https://img.shields.io/badge/docs.rs-latest-green?style=for-the-badge)](https://docs.rs/bitpacking-plus/)
+
 This crate wraps crate `bitpacking`. It contains variant bitpacking formats, inspired by [BPCells](https://github.com/bnprks/BPCells).
 
 See also this [article](https://bnprks.github.io/BPCells/articles/web-only/bitpacking-format.html)
