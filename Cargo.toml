@@ -1,0 +1,27 @@
+[package]
+name = "bitpacking-plus"
+version = "0.1.0"
+
+authors = ["Yuchen Li <ycli1995@outlook.com>"]
+edition = "2021"
+
+description = "Wrappers of bitpacking with extra pack formats"
+
+homepage = "https://github.com/ycli1995/bitpacking-plus"
+repository = "https://github.com/ycli1995/bitpacking-plus"
+readme = "README.md"
+
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+keywords = ["integer", "compression", "bitpacking"]
+
+[dependencies]
+bitpacking = { version = "0.8.4", features = ["bitpacker1x", "bitpacker4x", "bitpacker8x"] }
+
+[dev-dependencies]
+rand = "0.8.5"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "./src/docs-header.html" ]
