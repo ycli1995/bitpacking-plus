@@ -16,7 +16,7 @@ Same as behaviors in vanilla compression of [bitpacking](https://docs.rs/bitpack
 Same as behaviors in delta compression of [bitpacking](https://docs.rs/bitpacking/latest/bitpacking/trait.BitPacker.html#examples-with-delta-encoding), which transforms the original input into the difference between consecutive values prior to bitpacking. Therefore, the original input block must be sorted.
 
 ### `d1z` format
-Similar to `d1` format but with zigzag encoding applied after difference encoding, where $zigzag(x) = 2x$ if $x > 0$. This is best for lists of close but not fully sorted runs of integers.
+Similar to `d1` format but with zigzag encoding applied after difference encoding, where $zigzag(x) = 2x$ if $x > 0$, while $x < 0$, $zigzag(x) = -2x - 1$. This is best for lists of close but not fully sorted runs of integers.
 
 */
 
@@ -24,16 +24,18 @@ Similar to `d1` format but with zigzag encoding applied after difference encodin
 #[macro_use]
 pub(crate) mod tests;
 
+pub mod convert;
+pub use crate::convert::*;
+
 use bitpacking::{BitPacker, BitPacker1x, BitPacker4x, BitPacker8x};
-use core::iter::zip;
 
 /** # Wrappers of the orignial bitpacking trait
-The `panic` rules of `compressed` and `decompressed` array data are exactly the same as `bitpacking` crate. Details can 
+The `panic` rules of `compressed` and `decompressed` array data are exactly the same as `bitpacking` crate. Details can
 be found in [bitpacking::BitPacker](https://docs.rs/bitpacking/latest/bitpacking/trait.BitPacker.html).
 
 ## Note:
-* The `num_bits` parameter in `pack*` methods can be set to 0, which means to detect actual `num_bits` by internally call 
-[`bitpacker.num_bits()`](https://docs.rs/bitpacking/latest/bitpacking/trait.BitPacker.html#tymethod.num_bits) or 
+* The `num_bits` parameter in `pack*` methods can be set to 0, which means to detect actual `num_bits` by internally call
+[`bitpacker.num_bits()`](https://docs.rs/bitpacking/latest/bitpacking/trait.BitPacker.html#tymethod.num_bits) or
 [`bitpacker.num_bits_sorted()`](https://docs.rs/bitpacking/latest/bitpacking/trait.BitPacker.html#tymethod.num_bits_sorted)
 
 ## Examples
@@ -167,10 +169,7 @@ macro_rules! impl_bit_pack_ops {
 
             fn pack_m1(&self, decompressed: &[u32], compressed: &mut [u8], num_bits: u8) -> usize {
                 let mut tmp = vec![0_u32; decompressed.len()];
-                for (i, j) in zip(tmp.iter_mut(), decompressed.iter()) {
-                    assert_ne!(*j, 0_u32, "`pack_m1` must be used on only positive u32");
-                    *i = *j - 1;
-                }
+                vanilla_to_m1(decompressed, tmp.as_mut_slice());
                 self.pack(tmp.as_slice(), compressed, num_bits)
             }
 
@@ -182,9 +181,7 @@ macro_rules! impl_bit_pack_ops {
             ) -> usize {
                 let n = self.unpack(compressed, decompressed, num_bits);
                 let n_decompressed = n * 8 / num_bits as usize;
-                for i in decompressed.get_mut(0..n_decompressed).unwrap().iter_mut() {
-                    *i += 1;
-                }
+                m1_to_vanilla_self(decompressed.get_mut(0..n_decompressed).unwrap());
                 return n;
             }
 
@@ -208,21 +205,9 @@ macro_rules! impl_bit_pack_ops {
             }
 
             fn pack_d1z(&self, decompressed: &[u32], compressed: &mut [u8], num_bits: u8) -> usize {
-                let mut pre_val = decompressed[0];
                 let mut tmp = vec![0_u32; decompressed.len()];
-                for (i, j) in zip(tmp.iter_mut(), decompressed.iter()) {
-                    if *j < pre_val {
-                        *i = 2 * (pre_val - *j) - 1;
-                    } else {
-                        *i = 2 * (*j - pre_val);
-                    }
-                    pre_val = *j;
-                }
-                let num_bits: u8 = match num_bits {
-                    0 => self.num_bits(tmp.as_slice()),
-                    _ => num_bits,
-                };
-                self.compress(tmp.as_slice(), compressed, num_bits)
+                vanilla_to_d1z(decompressed, tmp.as_mut_slice());
+                self.pack(tmp.as_slice(), compressed, num_bits)
             }
 
             fn unpack_d1z(
@@ -232,18 +217,8 @@ macro_rules! impl_bit_pack_ops {
                 decompressed: &mut [u32],
                 num_bits: u8,
             ) -> usize {
-                let mut pre_val = initial;
                 let n = self.decompress(compressed, decompressed, num_bits);
-                for i in decompressed.iter_mut() {
-                    let m = *i % 2;
-                    let x = *i / 2;
-                    if m > 0 {
-                        *i = pre_val - x - 1;
-                    } else {
-                        *i = pre_val + x;
-                    }
-                    pre_val = *i;
-                }
+                d1z_to_vanilla_self(decompressed, initial);
                 return n;
             }
         }

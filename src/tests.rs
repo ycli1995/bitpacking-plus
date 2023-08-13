@@ -98,6 +98,21 @@ fn test_all() {
         PackMethod::M1,
     );
 
+    test_unpack_helper(
+        &bitpacker1,
+        &my_data,
+        &mut compressed,
+        BitPacker1x::BLOCK_LEN,
+        PackMethod::D1Z,
+    );
+    test_unpack_helper(
+        &bitpacker8,
+        &my_data,
+        &mut compressed,
+        BitPacker8x::BLOCK_LEN,
+        PackMethod::D1Z,
+    );
+
     my_data.sort();
 
     test_unpack_helper(
@@ -113,20 +128,5 @@ fn test_all() {
         &mut compressed,
         BitPacker8x::BLOCK_LEN,
         PackMethod::D1,
-    );
-
-    test_unpack_helper(
-        &bitpacker1,
-        &my_data,
-        &mut compressed,
-        BitPacker1x::BLOCK_LEN,
-        PackMethod::D1Z,
-    );
-    test_unpack_helper(
-        &bitpacker8,
-        &my_data,
-        &mut compressed,
-        BitPacker8x::BLOCK_LEN,
-        PackMethod::D1Z,
     );
 }
